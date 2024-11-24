@@ -1,0 +1,37 @@
+@import url("https://fonts.cdnfonts.com/css/inter");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+	.logo-link {
+		@apply h-28 w-28 inline-flex justify-center items-center;
+	}
+	.logo {
+		@apply bg-contain transition-all ease-out size-full hover:size-[110%] max-w-max;
+	}
+}
+
+:root {
+	font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+	font-size: 16px;
+	line-height: 24px;
+	font-weight: 400;
+
+	color: theme("colors.neutral.200");
+	background-color: theme("colors.neutral.800");
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		color: theme("colors.neutral.200");
+		background-color: theme("colors.neutral.800");
+	}
+}
