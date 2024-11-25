@@ -11,8 +11,22 @@ const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const validateForm = () => {
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return false;
+    }
+    if (!password.trim()) {
+      setError('Please enter your password.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
+    
     setIsLoading(true);
     setError(null);
 
@@ -35,7 +49,7 @@ const SignIn = () => {
         <h1 className="text-2xl font-bold text-white mb-6 text-center">VOID WORKS</h1>
         
         {error && (
-          <div className="text-red-500 text-sm mb-4 text-center">
+          <div className="bg-red-500/10 text-red-500 px-4 py-2 rounded text-sm mb-4 text-center">
             {error}
           </div>
         )}

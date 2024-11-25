@@ -8,15 +8,15 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const { logout } = useAuth();
+
+  const shouldShowIcons = isHovered || isLocked;
 
   return (
     <div 
       className="w-12 bg-[#111111] py-3 flex flex-col border-r border-[#222222] items-center group/sidebar"
-      onMouseEnter={() => !isLocked && setIsExpanded(true)}
-      onMouseLeave={() => !isLocked && setIsExpanded(false)}
     >
       <h1 className="text-xs font-medium tracking-wide text-[#666666] gap-5 rotate-90 whitespace-nowrap mt-10">
         VOID DASHBORD 
@@ -25,7 +25,7 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
       <div className="flex-1 flex flex-col items-center justify-end gap-3 mb-3">
         {/* Boards Button */}
         <div className={`transform transition-all duration-200 ${
-          (isExpanded || isLocked) ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0 pointer-events-none'
+          shouldShowIcons ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
         }`}>
           <button 
             onClick={onBoardsClick}
@@ -39,7 +39,7 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
 
         {/* Import/New Button - Changed icon to plus */}
         <div className={`transform transition-all duration-200 ${
-          (isExpanded || isLocked) ? 'translate-x-0 opacity-100 delay-75' : 'translate-x-4 opacity-0 pointer-events-none'
+          shouldShowIcons ? 'translate-y-0 opacity-100 delay-75' : 'translate-y-4 opacity-0 pointer-events-none'
         }`}>
           <button 
             onClick={onTrelloImport}
@@ -53,7 +53,7 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
 
         {/* Settings */}
         <div className={`transform transition-all duration-200 ${
-          (isExpanded || isLocked) ? 'translate-x-0 opacity-100 delay-75' : 'translate-x-4 opacity-0 pointer-events-none'
+          shouldShowIcons ? 'translate-y-0 opacity-100 delay-100' : 'translate-y-4 opacity-0 pointer-events-none'
         }`}>
           <button 
             onClick={onSettingsClick}
@@ -67,7 +67,7 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
 
         {/* Logout */}
         <div className={`transform transition-all duration-200 ${
-          (isExpanded || isLocked) ? 'translate-x-0 opacity-100 delay-150' : 'translate-x-4 opacity-0 pointer-events-none'
+          shouldShowIcons ? 'translate-y-0 opacity-100 delay-150' : 'translate-y-4 opacity-0 pointer-events-none'
         }`}>
           <button 
             onClick={logout} 
@@ -83,7 +83,9 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
       {/* Menu Toggle */}
       <div>
         <button 
-          onClick={() => setIsLocked(!isLocked)} 
+          onClick={() => setIsLocked(!isLocked)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           className={`w-10 h-10 flex items-center justify-center group transition-transform duration-300 ${
             isLocked ? 'rotate-180 text-white' : 'text-[#999999]'
           }`}

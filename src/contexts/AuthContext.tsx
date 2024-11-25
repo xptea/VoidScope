@@ -10,6 +10,26 @@ import {
   setPersistence,
 } from 'firebase/auth';
 
+const formatAuthError = (error: any): string => {
+  const errorCode = error?.code || '';
+  
+  const errorMessages: { [key: string]: string } = {
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/user-disabled': 'This account has been disabled.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/missing-password': 'Please enter your password.',
+    'auth/email-already-in-use': 'An account with this email already exists.',
+    'auth/weak-password': 'Password should be at least 6 characters long.',
+    'auth/network-request-failed': 'Network error. Please check your connection.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/internal-error': 'An internal error occurred. Please try again.',
+    'auth/invalid-credential': 'Invalid login credentials.',
+  };
+
+  return errorMessages[errorCode] || 'An unexpected error occurred. Please try again.';
+};
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -48,9 +68,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       setUser(result.user);
-    } catch (error) {
-      console.error('Email sign in error:', error);
-      throw error;
+    } catch (error: any) {
+      throw new Error(formatAuthError(error));
     }
   };
 
@@ -58,9 +77,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       setUser(result.user);
-    } catch (error) {
-      console.error('Email registration error:', error);
-      throw error;
+    } catch (error: any) {
+      throw new Error(formatAuthError(error));
     }
   };
 

@@ -77,7 +77,40 @@ const SettingsView = ({ onBack }: SettingsViewProps) => {
         </button>
       </div>
 
-      <div className="max-w-2xl">
+      <div className="max-w-2xl space-y-6">
+        {/* Profile Section */}
+        <div className="bg-[#161616] rounded-lg border border-[#222222] p-6">
+          <h2 className="text-lg font-medium text-white mb-6">Profile Information</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Email</label>
+              <div className="text-[#888888] px-3 py-2 bg-[#111111] border border-[#222222] rounded select-all">
+                {user?.email}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">User ID</label>
+              <div className="text-[#888888] px-3 py-2 bg-[#111111] border border-[#222222] rounded font-mono text-xs break-all select-all">
+                {user?.uid}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-400 mb-2">Account Created</label>
+              <div className="text-[#888888] px-3 py-2 bg-[#111111] border border-[#222222] rounded select-all">
+                {user?.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : 'N/A'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Existing Trello Integration Section */}
         <div className="bg-[#161616] rounded-lg border border-[#222222] p-6">
           <h2 className="text-lg font-medium text-white mb-6">Trello Integration</h2>
           
