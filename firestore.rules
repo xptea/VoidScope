@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Validate common fields
+    function hasValidTimestamp(data) {
+      return data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+
+    function hasValidTitle(data) {
+      return data.title is string && 
+             data.title.size() >= 1 && 
+             data.title.size() <= 100;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Prevent user deletion through Firestore
+
+      // Settings subcollection
+      match /settings/{settingId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+
+        // Validate Trello settings
+        match /trello {
+          allow read: if isOwner(userId);
+          allow write: if isOwner(userId) && 
+                         request.resource.data.apiKey is string && 
+                         request.resource.data.token is string;
+        }
+      }
+
+      // Boards subcollection
+      match /boards/{boardId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && 
+                        hasValidTitle(request.resource.data) && 
+                        hasValidTimestamp(request.resource.data);
+        allow update: if isOwner(userId) && 
+                        hasValidTitle(request.resource.data);
+        allow delete: if isOwner(userId);
+
+        // Cards/Lists subcollection within boards
+        match /cards/{cardId} {
+          function hasValidCards(data) {
+            return data.cards is list || data.cards == null;
+          }
+
+          function hasValidOrder(data) {
+            return data.order is number && data.order >= 0;
+          }
+
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) && 
+                         hasValidTitle(request.resource.data) && 
+                         hasValidCards(request.resource.data) && 
+                         hasValidOrder(request.resource.data);
+          allow update: if isOwner(userId) && 
+                         hasValidTitle(request.resource.data) && 
+                         hasValidCards(request.resource.data) && 
+                         hasValidOrder(request.resource.data);
+          allow delete: if isOwner(userId);
+        }
+      }
+
+      // Lists collection (for legacy support)
+      match /lists/{listId} {
+        function hasValidCards(data) {
+          return data.cards is list;
+        }
+
+        function hasValidOrder(data) {
+          return data.order is number && data.order >= 0;
+        }
+
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && 
+                       hasValidTitle(request.resource.data) && 
+                       hasValidCards(request.resource.data) && 
+                       hasValidOrder(request.resource.data);
+        allow update: if isOwner(userId) && 
+                       hasValidTitle(request.resource.data) && 
+                       hasValidCards(request.resource.data) && 
+                       hasValidOrder(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

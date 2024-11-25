@@ -1,5 +1,5 @@
 {
-  "name": "tauri-app",
+  "name": "voidworks",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,10 +10,16 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": ">=2.0.0",
+    "@tanstack/react-query": "^5.61.3",
+    "@tauri-apps/api": "^2.1.1",
     "@tauri-apps/plugin-shell": ">=2.0.0",
+    "@types/react-beautiful-dnd": "^13.1.8",
+    "@types/react-router-dom": "^5.3.3",
+    "firebase": "^11.0.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-beautiful-dnd": "^13.1.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.0.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": ">=2.0.0",

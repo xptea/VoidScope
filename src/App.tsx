@@ -1,53 +1,82 @@
-import "./main.css";
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import "./main.css";
+import BoardView from "./components/BoardView";
+import BoardsList from "./components/BoardsList";
+import Sidebar from "./components/Sidebar";
+import SignIn from "./components/SignIn";
+import TrelloImportView from './components/TrelloImportView';
+import SettingsView from './components/SettingsView';
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-function App() {
-	const [greetMsg, setGreetMsg] = useState("");
-	const [name, setName] = useState("");
+const queryClient = new QueryClient();
 
-	async function greet() {
-		setGreetMsg(await invoke("greet", { name }));
-	}
+const AppContent = () => {
+  const { user } = useAuth();
+  const [currentView, setCurrentView] = useState<'boards' | 'board' | 'import' | 'settings'>('boards');
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
 
-	return (
-		<main className="w-screen flex flex-col justify-center text-center m-0 pt-16 gap-2">
-			<h1 className="text-3xl font-bold">Welcome to Tauri + React + TailwindCSS</h1>
+  if (!user) {
+    return <SignIn />;
+  }
 
-			<div className="m-8">
-				<div className="flex gap-12 justify-center mb-5">
-					<a href="https://tauri.app" target="_blank" className="logo-link">
-						<img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-					</a>
-					<a href="https://reactjs.org" target="_blank" className="logo-link">
-						<img src={"/react.svg"} className="logo react" alt="React logo" />
-					</a>
-					<a href="https://tailwindcss.com/" target="_blank" className="logo-link">
-						<img src="/tailwind.svg" className="logo tailwind" alt="TailwindCSS logo" />
-					</a>
-				</div>
-				<p>Click on a logo to learn more.</p>
-			</div>
+  const handleBoardSelect = (boardId: string) => {
+    setSelectedBoardId(boardId);
+    setCurrentView('board');
+  };
 
-			<form
-				className="flex justify-center gap-2"
-				onSubmit={(e) => {
-					e.preventDefault();
-					greet();
-				}}
-			>
-				<input
-					onChange={(e) => setName(e.currentTarget.value)}
-					placeholder="Enter a name..."
-					className="bg-neutral-900 py-3 px-4 w-64 rounded-md outline-none"
-				/>
-				<button className="bg-neutral-900 px-6 py-2 rounded-md" type="submit">
-					Greet
-				</button>
-			</form>
-			<p>{greetMsg}</p>
-		</main>
-	);
-}
+  const handleTrelloImport = () => {
+    setCurrentView('import');
+  };
+
+  const handleBackToBoards = () => {
+    setCurrentView('boards');
+    setSelectedBoardId(null);
+  };
+
+  const handleSettingsClick = () => {
+    setCurrentView('settings');
+  };
+
+  return (
+    <div className="flex h-screen bg-[#111111]">
+      <Sidebar 
+        onBoardsClick={handleBackToBoards}
+        onTrelloImport={handleTrelloImport}
+        onSettingsClick={handleSettingsClick}
+      />
+      
+      <main className="flex-1 overflow-y-auto">
+        {currentView === 'boards' && (
+          <BoardsList onSelectBoard={handleBoardSelect} />
+        )}
+        {currentView === 'board' && selectedBoardId && (
+          <BoardView 
+            boardId={selectedBoardId} 
+            onTrelloImport={handleTrelloImport}
+          />
+        )}
+        {currentView === 'import' && (
+          <TrelloImportView onBack={handleBackToBoards} onSettings={function (): void {
+            throw new Error("Function not implemented.");
+          } } />
+        )}
+        {currentView === 'settings' && (
+          <SettingsView onBack={handleBackToBoards} />
+        )}
+      </main>
+    </div>
+  );
+};
+
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
