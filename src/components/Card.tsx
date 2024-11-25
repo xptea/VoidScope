@@ -49,6 +49,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (!isEditing) {
+      e.preventDefault();
       e.stopPropagation();
       setIsCollapsed(!isCollapsed);
     }
@@ -61,22 +62,17 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-[#1a1a1a] p-3 rounded-md group w-full ${
-            provided.draggableProps.style?.transform 
-              ? 'ring-2 ring-blue-500/50 shadow-lg shadow-blue-500/20' 
-              : 'hover:bg-[#1d1d1d]'
-          }`}
+          className={`bg-[#1a1a1a] rounded-md group w-full min-w-0 flex flex-col transition-all duration-200 ease-in-out overflow-hidden
+            ${isCollapsed ? 'py-2 px-3' : 'p-3'}`}
           style={{
             ...provided.draggableProps.style,
-            transform: provided.draggableProps.style?.transform,
-            transition: provided.draggableProps.style?.transform
-              ? provided.draggableProps.style?.transition
-              : 'background-color 0.2s ease, box-shadow 0.2s ease',
           }}
-          onDoubleClick={handleDoubleClick}
         >
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex-1 min-w-0">
+          <div 
+            className="flex items-center justify-between gap-2 min-w-0 w-full cursor-pointer"
+            onDoubleClick={handleDoubleClick}
+          >
+            <div className="flex-1 min-w-0 relative mr-2 flex">
               {isEditing ? (
                 <input
                   type="text"
@@ -96,20 +92,21 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                   }}
                 />
               ) : (
-                <h4 className="font-medium text-sm group-hover:text-white transition-colors truncate">
+                <h4 className={`font-medium text-sm group-hover:text-white transition-colors min-w-0 flex-1
+                  ${isCollapsed ? 'truncate' : 'break-words whitespace-normal'}`}>
                   {title}
                 </h4>
               )}
             </div>
             
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 ml-auto pl-2">
               {!isEditing && !isDeleting && (
                 <div className="relative group/menu">
                   <button className="text-[#666666] hover:text-white w-6 h-6 flex items-center justify-center text-lg transition-all duration-200 transform group-hover/menu:rotate-90">
                     ≡
                   </button>
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center">
-                    <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover/menu:translate-x-0 group-hover/menu:opacity-100 transition-all duration-200">
+                  <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center z-20">
+                    <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover/menu:translate-x-0 group-hover/menu:opacity-100 transition-all duration-200 bg-[#1a1a1a] shadow-md p-1 rounded-md">
                       <button
                         onClick={startEditing}
                         className="text-[#666666] hover:text-white w-6 h-6 flex items-center justify-center text-base"
@@ -200,22 +197,25 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           </div>
 
           <div 
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed ? 'max-h-0 opacity-0' : 'max-h-20 opacity-100 mt-2'
-            }`}
+            className={`transition-all duration-200 ease-in-out w-full overflow-hidden
+              ${isCollapsed ? 'max-h-0 opacity-0 mt-0 mb-0' : 'max-h-[200px] opacity-100 mt-2'}`}
+            style={{
+              transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)'
+            }}
           >
             {isEditing ? (
               <textarea
                 value={editedDescription}
                 onChange={(e) => setEditedDescription(e.target.value)}
-                className="bg-[#111111] border border-[#333333] text-xs w-full p-2 mt-1 focus:outline-none text-[#999999] resize-none rounded-sm"
+                className="bg-[#111111] border border-[#333333] text-xs w-full p-2 focus:outline-none text-[#999999] resize-none rounded-sm"
                 onClick={(e) => e.stopPropagation()}
+                style={{ minHeight: '60px' }}
               />
-            ) : (
-              <p className="text-[#666666] text-xs group-hover:text-[#999999] transition-colors">
+            ) : description ? (
+              <p className="text-[#666666] text-xs group-hover:text-[#999999] transition-colors break-words">
                 {description}
               </p>
-            )}
+            ) : null}
           </div>
         </div>
       )}

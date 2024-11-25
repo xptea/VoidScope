@@ -4,6 +4,7 @@ import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, write
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import List from './List';
+import { v4 as uuidv4 } from 'uuid';
 
 interface CardType {
   id: string;
@@ -90,13 +91,13 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
     if (!list) return;
 
     const newCard = {
-      id: `card-${Date.now()}`,
+      id: uuidv4(),
       title: 'New Card',
-      description: 'Description'
+      description: 'Description',
     };
 
     await updateDoc(listRef, {
-      cards: [...(list.cards || []), newCard]
+      cards: [...(list.cards || []), newCard],
     });
   };
 
@@ -145,42 +146,46 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
         const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, list.id);
         batch.update(listRef, { order: index });
       });
-      await batch.commit();
-
       setLists(newLists);
-      return;
-    }
-
-    const sourceList = lists.find(l => l.id === source.droppableId);
-    const destList = lists.find(l => l.id === destination.droppableId);
-
-    if (!sourceList || !destList) return;
-
-    if (source.droppableId === destination.droppableId) {
-      // Moving within the same list
-      const newCards = Array.from(sourceList.cards);
-      const [movedCard] = newCards.splice(source.index, 1);
-      newCards.splice(destination.index, 0, movedCard);
-
-      // Update in database
-      const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, sourceList.id);
-      await updateDoc(listRef, { cards: newCards });
-    } else {
+    } else if (type === 'CARD') {
+      const sourceListIndex = lists.findIndex(l => l.id === source.droppableId);
+      const destListIndex = lists.findIndex(l => l.id === destination.droppableId);
+  
+      if (sourceListIndex === -1 || destListIndex === -1) return;
+  
+      const sourceList = lists[sourceListIndex];
+      const destList = lists[destListIndex];
+  
       const sourceCards = Array.from(sourceList.cards);
       const [movedCard] = sourceCards.splice(source.index, 1);
-      const destCards = Array.from(destList.cards);
+  
+      const destCards =
+        source.droppableId === destination.droppableId
+          ? sourceCards
+          : Array.from(destList.cards);
       destCards.splice(destination.index, 0, movedCard);
-
+  
       const batch = writeBatch(db);
       batch.update(
         doc(db, `users/${user.uid}/boards/${boardId}/cards`, sourceList.id),
         { cards: sourceCards }
       );
-      batch.update(
-        doc(db, `users/${user.uid}/boards/${boardId}/cards`, destList.id),
-        { cards: destCards }
-      );
+      if (source.droppableId !== destination.droppableId) {
+        batch.update(
+          doc(db, `users/${user.uid}/boards/${boardId}/cards`, destList.id),
+          { cards: destCards }
+        );
+      }
       await batch.commit();
+  
+      setLists(prevLists => {
+        const newLists = Array.from(prevLists);
+        newLists[sourceListIndex] = { ...sourceList, cards: sourceCards };
+        if (source.droppableId !== destination.droppableId) {
+          newLists[destListIndex] = { ...destList, cards: destCards };
+        }
+        return newLists;
+      });
     }
   };
 
@@ -220,7 +225,11 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
                 isHorizontal 
                   ? 'flex gap-4 overflow-x-auto pb-4' 
                   : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-              }`}
+              } relative`}
+              style={{
+                minHeight: '100px',
+                height: 'calc(100vh - 140px)',
+              }}
             >
               {lists.map((list, index) => (
                 <List
@@ -250,7 +259,9 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
         </Droppable>
       </DragDropContext>
     </div>
+
   );
 };
 
 export default BoardView;
+

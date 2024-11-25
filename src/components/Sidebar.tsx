@@ -19,7 +19,7 @@ const Sidebar = ({ onBoardsClick, onTrelloImport, onSettingsClick }: SidebarProp
       className="w-12 bg-[#111111] py-3 flex flex-col border-r border-[#222222] items-center group/sidebar"
     >
       <h1 className="text-xs font-medium tracking-wide text-[#666666] gap-5 rotate-90 whitespace-nowrap mt-10">
-        VOID DASHBORD 
+        VOID DASHBORD
       </h1>
       
       <div className="flex-1 flex flex-col items-center justify-end gap-3 mb-3">
