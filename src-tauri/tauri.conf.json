@@ -19,10 +19,10 @@
         "minHeight": 400,
         "decorations": true,
         "transparent": false,
-        "resizable": false      }
+        "resizable": false
+      }
     ],
     "security": {
-      "csp": "default-src 'self' https://accounts.google.com https://*.firebaseapp.com https://www.googleapis.com https://identitytoolkit.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.cloudfunctions.net https://*.firebase.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com; script-src 'self' 'unsafe-eval' https://*.firebaseapp.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com;"
     }
   },
   "bundle": {
