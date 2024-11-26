@@ -86,6 +86,13 @@
   /* Drag and drop styles */
   .dragging {
     @apply opacity-50 shadow-lg;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 9999 !important; /* Ensure it stays on top */
+    pointer-events: none !important;
+    background-color: rgba(0, 0, 0, 0.5); /* Add background color */
   }
 
   .dragging-over {
@@ -146,4 +153,25 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+.dragging-card {
+  position: fixed !important;
+  top: auto !important;
+  left: auto !important;
+  pointer-events: none !important;
+  transform: translate(var(--x, 0), var(--y, 0)) !important;
+  width: var(--width) !important;
+  z-index: 9999 !important; /* Ensure it stays on top */
+}
+
+[data-rbd-draggable-context-id] {
+  position: relative !important;
+}
+
+[data-rbd-drag-handle-context-id] {
+  cursor: grab;
+}
+
+[data-rbd-drag-handle-context-id]:active {
+  cursor: grabbing;
 }

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import "./main.css";
-import BoardView from "./components/BoardView";
-import BoardsList from "./components/BoardsList";
-import Sidebar from "./components/Sidebar";
-import SignIn from "./components/SignIn";
-import TrelloImportView from './components/TrelloImportView';
-import SettingsView from './components/SettingsView';
+import BoardView from "./components/pages/BoardView";
+import BoardsList from "./components/pages/BoardsList";
+import Sidebar from "./components/backend/Sidebar";
+import SignIn from "./components/pages/SignIn";
+import TrelloImportView from './components/pages/TrelloImportView';
+import SettingsView from './components/pages/SettingsView';
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

@@ -57,13 +57,13 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
 
   return (
     <Draggable draggableId={id} index={index}>
-      {(provided) => (
+      {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`bg-[#1a1a1a] rounded-md group w-full min-w-0 flex flex-col transition-all duration-200 ease-in-out overflow-hidden
-            ${isCollapsed ? 'py-2 px-3' : 'p-3'}`}
+            ${isCollapsed ? 'py-2 px-3' : 'p-3'} ${snapshot.isDragging ? 'dragging' : ''}`}
           style={{
             ...provided.draggableProps.style,
           }}

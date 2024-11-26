@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { useAuth } from '../contexts/AuthContext';
-import List from './List';
+import { db } from '../../lib/firebase';
+import { useAuth } from '../../contexts/AuthContext';
+import List from '../../components/backend/List';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CardType {

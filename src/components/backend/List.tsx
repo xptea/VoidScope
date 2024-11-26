@@ -85,7 +85,7 @@ const List: React.FC<ListProps> = ({
               isHorizontal ? 'w-[300px] flex-shrink-0' : 'w-full max-w-[300px]'
             } flex flex-col ${
               !isCollapsed ? 'pb-1' : ''
-            } px-4 pt-4 ${snapshot.isDragging ? 'shadow-xl' : 'shadow-lg hover:bg-[#171717]'}`}
+            } px-4 pt-4 ${snapshot.isDragging ? 'shadow-xl dragging' : 'shadow-lg hover:bg-[#171717]'}`}
             style={{
               ...provided.draggableProps.style,
               transform: provided.draggableProps.style?.transform,
