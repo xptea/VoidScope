@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
-import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import List from '../../components/backend/List';
 import { v4 as uuidv4 } from 'uuid';
+import { useDragDropSystem, CardType, ListType } from '../../lib/DragDropSystem';
 
-interface CardType {
-  id: string;
-  title: string;
-  description: string;
-}
-
-interface ListType {
-  id: string;
-  title: string;
-  cards: CardType[];
-  order: number;
-}
+// Remove the CardType and ListType interfaces since they're now imported
 
 interface BoardViewProps {
   boardId: string;
@@ -126,68 +116,12 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
     await updateDoc(listRef, { cards: updatedCards });
   };
 
-  const onDragEnd = async (result: DropResult) => {
-    const { destination, source, type } = result;
-    
-    if (!destination || !user || !boardId) return;
-
-    if (destination.droppableId === source.droppableId && 
-        destination.index === source.index) {
-      return;
-    }
-
-    if (type === 'LIST') {
-      const newLists = Array.from(lists);
-      const [moved] = newLists.splice(source.index, 1);
-      newLists.splice(destination.index, 0, moved);
-
-      const batch = writeBatch(db);
-      newLists.forEach((list, index) => {
-        const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, list.id);
-        batch.update(listRef, { order: index });
-      });
-      setLists(newLists);
-    } else if (type === 'CARD') {
-      const sourceListIndex = lists.findIndex(l => l.id === source.droppableId);
-      const destListIndex = lists.findIndex(l => l.id === destination.droppableId);
-  
-      if (sourceListIndex === -1 || destListIndex === -1) return;
-  
-      const sourceList = lists[sourceListIndex];
-      const destList = lists[destListIndex];
-  
-      const sourceCards = Array.from(sourceList.cards);
-      const [movedCard] = sourceCards.splice(source.index, 1);
-  
-      const destCards =
-        source.droppableId === destination.droppableId
-          ? sourceCards
-          : Array.from(destList.cards);
-      destCards.splice(destination.index, 0, movedCard);
-  
-      const batch = writeBatch(db);
-      batch.update(
-        doc(db, `users/${user.uid}/boards/${boardId}/cards`, sourceList.id),
-        { cards: sourceCards }
-      );
-      if (source.droppableId !== destination.droppableId) {
-        batch.update(
-          doc(db, `users/${user.uid}/boards/${boardId}/cards`, destList.id),
-          { cards: destCards }
-        );
-      }
-      await batch.commit();
-  
-      setLists(prevLists => {
-        const newLists = Array.from(prevLists);
-        newLists[sourceListIndex] = { ...sourceList, cards: sourceCards };
-        if (source.droppableId !== destination.droppableId) {
-          newLists[destListIndex] = { ...destList, cards: destCards };
-        }
-        return newLists;
-      });
-    }
-  };
+  const { onDragEnd } = useDragDropSystem({
+    lists,
+    setLists,
+    userId: user?.uid || '',
+    boardId,
+  });
 
   if (isLoading) {
     return (

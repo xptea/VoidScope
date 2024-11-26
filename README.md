@@ -1,13 +1,3 @@
-# Tauri + React + Typescript + Bun + Tailwindcss
+# VoidScope by VoidWorks
 
-start
-```batch
-bunx degit Velover/Tauri2.0-react-ts-vite-tailwindcss
-bun i
-```
-
-This template should help get you started developing with Tauri, React, Typescript and TailwindCss in Vite.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+The name VoidScope could symbolize a tool that assists users in expanding their scope of tasks, projects, or ideas, all while maintaining organization and focus. The “Void” element conveys a contemporary and technologically inspired aesthetic—potentially implying a space where users can think broadly, devoid of conventional limitations.

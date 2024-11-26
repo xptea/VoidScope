@@ -62,14 +62,13 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-[#1a1a1a] rounded-md group w-full min-w-0 flex flex-col transition-all duration-200 ease-in-out overflow-hidden
-            ${isCollapsed ? 'py-2 px-3' : 'p-3'} ${snapshot.isDragging ? 'dragging' : ''}`}
-          style={{
-            ...provided.draggableProps.style,
-          }}
+          style={provided.draggableProps.style}
+          className={`bg-[#1a1a1a] rounded-md group min-w-0 flex flex-col ${
+            snapshot.isDragging ? 'shadow-xl ring-1 ring-black/20' : ''
+          }`}
         >
           <div 
-            className="flex items-center justify-between gap-2 min-w-0 w-full cursor-pointer"
+            className={`flex items-center justify-between gap-2 min-w-0 w-full cursor-pointer p-2`}
             onDoubleClick={handleDoubleClick}
           >
             <div className="flex-1 min-w-0 relative mr-2 flex">
@@ -197,8 +196,13 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           </div>
 
           <div 
-            className={`transition-all duration-200 ease-in-out w-full overflow-hidden
-              ${isCollapsed ? 'max-h-0 opacity-0 mt-0 mb-0' : 'max-h-[200px] opacity-100 mt-2'}`}
+            className={`transition-all duration-200 ease-in-out w-full overflow-hidden px-2
+              ${isCollapsed 
+                ? 'max-h-0 opacity-0 m-0' 
+                : description || isEditing 
+                  ? 'max-h-[200px] opacity-100 pb-2' 
+                  : 'max-h-0'
+              }`}
             style={{
               transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)'
             }}

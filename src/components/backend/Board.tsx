@@ -1,22 +1,10 @@
 import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
-import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
+import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import List from './List';
-
-interface CardType {
-  id: string;
-  title: string;
-  description: string;
-}
-
-interface ListType {
-  id: string;
-  title: string;
-  cards: CardType[];
-  order: number;
-}
+import { useDragDropSystem, CardType, ListType } from '../../lib/DragDropSystem';
 
 const Board: React.FC = () => {
   const [isHorizontal, setIsHorizontal] = useState(false);
@@ -101,76 +89,12 @@ const Board: React.FC = () => {
     await updateDoc(listRef, { cards: updatedCards });
   };
 
-  const updateListOrder = async (newLists: ListType[]) => {
-    if (!user) return;
-
-    const batch = writeBatch(db);
-    newLists.forEach((list, index) => {
-      const listRef = doc(db, `users/${user.uid}/lists`, list.id);
-      batch.update(listRef, { order: index });
-    });
-    await batch.commit();
-  };
-
-  const onDragEnd = async (result: DropResult) => {
-    const { destination, source, type } = result;
-    
-    if (!destination) return;
-
-    if (destination.droppableId === source.droppableId && 
-        destination.index === source.index) {
-      return;
-    }
-
-    if (type === 'LIST') {
-      const items = Array.from(lists);
-      const [reorderedItem] = items.splice(source.index, 1);
-      items.splice(destination.index, 0, reorderedItem);
-      setLists(items);
-      await updateListOrder(items);
-      return;
-    }
-
-    const sourceList = lists.find(list => list.id === source.droppableId);
-    const destList = lists.find(list => list.id === destination.droppableId);
-
-    if (!sourceList || !destList) return;
-
-    if (source.droppableId === destination.droppableId) {
-      const newCards = Array.from(sourceList.cards);
-      const [removedCard] = newCards.splice(source.index, 1);
-      newCards.splice(destination.index, 0, removedCard);
-
-      const newList = {
-        ...sourceList,
-        cards: newCards
-      };
-
-      const newLists = lists.map(list => 
-        list.id === sourceList.id ? newList : list
-      );
-
-      setLists(newLists);
-    } else {
-      // Moving card to another list
-      const sourceCards = Array.from(sourceList.cards);
-      const [removedCard] = sourceCards.splice(source.index, 1);
-      const destinationCards = Array.from(destList.cards);
-      destinationCards.splice(destination.index, 0, removedCard);
-
-      const newLists = lists.map(list => {
-        if (list.id === source.droppableId) {
-          return { ...list, cards: sourceCards };
-        }
-        if (list.id === destination.droppableId) {
-          return { ...list, cards: destinationCards };
-        }
-        return list;
-      });
-
-      setLists(newLists);
-    }
-  };
+  const { onDragEnd } = useDragDropSystem({
+    lists,
+    setLists,
+    userId: user?.uid || '',
+    boardId: 'default', // Adjust this based on your needs
+  });
 
   return (
     <div className="flex-1 p-6">
