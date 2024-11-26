@@ -7,8 +7,6 @@ import List from '../../components/backend/List';
 import { v4 as uuidv4 } from 'uuid';
 import { useDragDropSystem, CardType, ListType } from '../../lib/DragDropSystem';
 
-// Remove the CardType and ListType interfaces since they're now imported
-
 interface BoardViewProps {
   boardId: string;
   onTrelloImport?: () => void;
@@ -133,22 +131,20 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
 
   return (
     <div className="flex-1 bg-[#111111] p-4">
-      <div className="flex items-center justify-between gap-2 mb-6 px-2">
+      <div className="flex items-center justify-between gap-2 mb-4 px-2">
         <h2 className="text-white font-medium">{board?.title || 'Loading...'}</h2>
-        
         {onTrelloImport && (
           <button
-            onClick={onTrelloImport}
+            onClick={addList}
             className="flex items-center gap-2 px-3 py-1.5 rounded bg-[#222222] hover:bg-[#333333] text-[#666666] hover:text-white transition-colors text-sm"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>
-            Import
+            Add New Card
           </button>
         )}
       </div>
-      
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="all-lists" type="LIST" direction={isHorizontal ? 'horizontal' : 'vertical'}>
           {(provided) => (
@@ -182,12 +178,6 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
               ))}
               {provided.placeholder}
               
-              <button
-                onClick={addList}
-                className="w-full py-2 px-4 bg-[#222222] hover:bg-[#333333] transition-colors rounded-sm text-[#666666] hover:text-white"
-              >
-                + Add List
-              </button>
             </div>
           )}
         </Droppable>

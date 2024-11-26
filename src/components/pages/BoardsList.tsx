@@ -98,13 +98,11 @@ const BoardsList = ({ onSelectBoard }: { onSelectBoard: (boardId: string) => voi
       try {
         const userRef = doc(db, 'users', user.uid);
         
-        // Create user document if it doesn't exist
         await setDoc(userRef, {
           email: user.email,
           updatedAt: new Date()
         }, { merge: true });
 
-        // Listen to boards collection
         const boardsRef = collection(db, `users/${user.uid}/boards`);
         const q = query(boardsRef, orderBy('createdAt', 'desc'));
 
@@ -142,39 +140,32 @@ const BoardsList = ({ onSelectBoard }: { onSelectBoard: (boardId: string) => voi
     setError(null);
 
     try {
-      // Create a reference to the boards collection
       const boardsRef = collection(db, `users/${user.uid}/boards`);
       
-      // Create new board
       const newBoard = await addDoc(boardsRef, {
         title: 'New Board',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
 
-      // After board is created, create default cards
       const cardsRef = collection(db, `users/${user.uid}/boards/${newBoard.id}/cards`);
       
-      // Create default lists as cards
       const defaultCards = [
         { title: 'To Do', cards: [], order: 0 },
         { title: 'In Progress', cards: [], order: 1 },
         { title: 'Done', cards: [], order: 2 }
       ];
 
-      // Add cards sequentially to avoid potential conflicts
       for (const card of defaultCards) {
         await addDoc(cardsRef, card);
       }
 
-      // Set board for editing
       setBoardToEdit({
         id: newBoard.id,
         title: 'New Board',
         createdAt: Timestamp.now()
       });
 
-      // Navigate to the new board immediately
       onSelectBoard(newBoard.id);
     } catch (err) {
       console.error('Error creating board:', err);

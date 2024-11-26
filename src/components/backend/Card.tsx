@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-
-// Add the CardType interface
 interface CardType {
   id: string;
   title: string;
@@ -20,11 +18,9 @@ interface CardProps {
 const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, onDelete }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedDescription, setEditedDescription] = useState(description);
 
-  // Uncollapse when editing starts
   const startEditing = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsCollapsed(false);
@@ -42,9 +38,11 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
     setIsEditing(false);
   };
 
-  const handleDelete = () => {
-    onDelete();
-    setIsDeleting(false);
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this card?')) {
+      onDelete();
+    }
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -66,11 +64,9 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           className={`bg-[#1a1a1a] rounded-md group min-w-0 flex flex-col ${
             snapshot.isDragging ? 'shadow-xl ring-1 ring-black/20' : ''
           }`}
+          onDoubleClick={handleDoubleClick}
         >
-          <div 
-            className={`flex items-center justify-between gap-2 min-w-0 w-full cursor-pointer p-2`}
-            onDoubleClick={handleDoubleClick}
-          >
+          <div className="flex items-center justify-between gap-2 min-w-0 w-full p-2">
             <div className="flex-1 min-w-0 relative mr-2 flex">
               {isEditing ? (
                 <input
@@ -99,7 +95,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
             </div>
             
             <div className="flex items-center gap-1 shrink-0 ml-auto pl-2">
-              {!isEditing && !isDeleting && (
+              {!isEditing && (
                 <div className="relative group/menu">
                   <button className="text-[#666666] hover:text-white w-6 h-6 flex items-center justify-center text-lg transition-all duration-200 transform group-hover/menu:rotate-90">
                     ≡
@@ -113,10 +109,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                         ✎
                       </button>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsDeleting(true);
-                        }}
+                        onClick={handleDeleteClick}
                         className="text-[#666666] hover:text-red-500 w-6 h-6 flex items-center justify-center"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -151,34 +144,6 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                 </div>
               )}
 
-              {isDeleting && (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-[#666666]">Delete?</span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete();
-                      }}
-                      className="text-green-500 hover:text-green-400 w-5 h-5 flex items-center justify-center text-sm"
-                    >
-                      ✓
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsDeleting(false);
-                      }}
-                      className="text-red-500 hover:text-red-400 w-5 h-5 flex items-center justify-center"
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M6 7H5M6 7H8M18 7H19M18 7H16M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M8 7H16M10 11V16M14 11V16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )}
-
               <div className="h-4 w-[1px] bg-[#222222] mx-1"></div>
 
               {!isEditing && (
@@ -196,16 +161,13 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           </div>
 
           <div 
-            className={`transition-all duration-200 ease-in-out w-full overflow-hidden px-2
+            className={`w-full overflow-hidden transition-all duration-200
               ${isCollapsed 
-                ? 'max-h-0 opacity-0 m-0' 
+                ? 'h-0' 
                 : description || isEditing 
-                  ? 'max-h-[200px] opacity-100 pb-2' 
-                  : 'max-h-0'
+                  ? 'px-2 pb-2' 
+                  : 'h-0'
               }`}
-            style={{
-              transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)'
-            }}
           >
             {isEditing ? (
               <textarea

@@ -70,16 +70,19 @@ const List: React.FC<ListProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`bg-[#161616] rounded-md group ${
-            isHorizontal ? 'w-[300px] flex-shrink-0' : 'w-full max-w-[300px]'
-          } flex flex-col px-4 pt-4 ${
-            !isCollapsed ? 'pb-1' : ''
-          }`}
-          style={provided.draggableProps.style}
+          className={`bg-[#161616] rounded-md group 
+            ${isHorizontal ? 'w-[300px] flex-shrink-0' : 'w-full max-w-[300px]'}
+            flex flex-col px-4 pt-4`}
+          style={{
+            ...provided.draggableProps.style,
+            height: 'fit-content',
+            minHeight: isHorizontal ? 'auto' : '200px',
+          }}
         >
           <div 
             {...provided.dragHandleProps}
             className="flex items-start justify-between mb-4 gap-2 list-header"
+            onDoubleClick={() => setIsCollapsed(!isCollapsed)}
           >
             <div className="flex-1 min-w-0 relative mr-2 flex">
               {isEditing ? (
@@ -122,7 +125,11 @@ const List: React.FC<ListProps> = ({
                         ✎
                       </button>
                       <button
-                        onClick={() => onDelete(id)}
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this card?')) {
+                            onDelete(id);
+                          }
+                        }}
                         className="text-[#666666] hover:text-red-500 w-6 h-6 flex items-center justify-center"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -154,6 +161,13 @@ const List: React.FC<ListProps> = ({
               <div className="h-4 w-[1px] bg-[#222222] mx-1"></div>
 
               <button
+                onClick={handleAddCard}
+                className="text-[#666666] hover:text-white transition-colors w-7 h-7 flex items-center justify-center text-lg"
+              >
+                +
+              </button>
+
+              <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="text-[#666666] hover:text-white transition-colors w-6 h-6 flex items-center justify-center"
               >
@@ -162,19 +176,23 @@ const List: React.FC<ListProps> = ({
             </div>
           </div>
 
-          <Droppable droppableId={id} type="CARD">
+          <Droppable 
+            droppableId={id} 
+            type="CARD"
+            direction={isHorizontal ? 'horizontal' : 'vertical'}
+          >
             {(dropProvided, dropSnapshot) => (
               <div
                 ref={dropProvided.innerRef}
                 {...dropProvided.droppableProps}
-                className={`flex flex-col gap-2 rounded-md transition-colors
-                  ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[70vh] overflow-y-auto'} 
+                className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2 
+                  ${isCollapsed ? 'h-0 overflow-hidden' : 'min-h-[50px] overflow-y-auto'} 
                   ${dropSnapshot.isDraggingOver ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}`}
                 style={{
-                  minHeight: isCollapsed ? 0 : '50px',
+                  maxHeight: isHorizontal ? '100%' : 'calc(100vh - 300px)',
                 }}
               >
-                <div className="flex flex-col gap-2 p-0.5">
+                <div className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2`}>
                   {cards?.map((card, cardIndex) => (
                     <Card
                       key={card.id}
@@ -183,30 +201,18 @@ const List: React.FC<ListProps> = ({
                       title={card.title}
                       description={card.description}
                       onUpdate={(updates) => onUpdateCard(id, card.id, updates)}
-                      onDelete={() => onDeleteCard(id, card.id)}
+                      onDelete={() => {
+                        if (window.confirm('Are you sure you want to delete this card?')) {
+                          onDeleteCard(id, card.id);
+                        }
+                      }}
                     />
                   ))}
+                  {dropProvided.placeholder}
                 </div>
-                {dropProvided.placeholder}
               </div>
             )}
           </Droppable>
-
-          <div 
-            className={`transition-all duration-200 ease-in-out overflow-hidden
-              ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[40px] opacity-100'}`}
-            style={{
-              transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)',
-            }}
-          >
-            <button
-              onClick={handleAddCard}
-              className="w-full py-1 text-[#666666] hover:text-white transition-all duration-200 
-                text-sm hover:bg-[#1a1a1a] rounded-md mt-2 opacity-0 group-hover:opacity-100"
-            >
-              + Add Card
-            </button>
-          </div>
         </div>
       )}
     </Draggable>
