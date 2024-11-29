@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 
-// Add the CardType interface
 interface CardType {
   id: string;
   title: string;
@@ -15,16 +14,16 @@ interface CardProps {
   id: string;
   onUpdate: (updates: Partial<CardType>) => void;
   onDelete: () => void;
+  isHorizontal?: boolean; // Add this line
 }
 
-const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, onDelete }) => {
+const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, onDelete, isHorizontal }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [editedDescription, setEditedDescription] = useState(description);
 
-  // Uncollapse when editing starts
   const startEditing = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsCollapsed(false);
@@ -62,7 +61,10 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          style={provided.draggableProps.style}
+          style={{
+            ...provided.draggableProps.style,
+            margin: isHorizontal ? '0 8px 0 0' : '0 0 8px 0', // Adjust margin for horizontal dragging
+          }}
           className={`bg-[#1a1a1a] rounded-md group min-w-0 flex flex-col ${
             snapshot.isDragging ? 'shadow-xl ring-1 ring-black/20' : ''
           }`}
@@ -91,7 +93,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                   }}
                 />
               ) : (
-                <h4 className={`font-medium text-sm group-hover:text-white transition-colors min-w-0 flex-1
+                <h4 className={`font-medium text-sm text-white min-w-0 flex-1
                   ${isCollapsed ? 'truncate' : 'break-words whitespace-normal'}`}>
                   {title}
                 </h4>
@@ -216,7 +218,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                 style={{ minHeight: '60px' }}
               />
             ) : description ? (
-              <p className="text-[#666666] text-xs group-hover:text-[#999999] transition-colors break-words">
+              <p className="text-white text-xs break-words">
                 {description}
               </p>
             ) : null}

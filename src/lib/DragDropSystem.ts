@@ -2,34 +2,34 @@ import { DropResult } from 'react-beautiful-dnd';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
-export interface CardType {
+export interface TaskType {
   id: string;
   title: string;
   description: string;
 }
 
-export interface ListType {
+export interface CardType {
   id: string;
   title: string;
-  cards: CardType[];
+  tasks: TaskType[];
   order: number;
 }
 
 interface UseDragDropSystemProps {
-  lists: ListType[];
-  setLists: (lists: ListType[] | ((prevLists: ListType[]) => ListType[])) => void;
+  cards: CardType[];
+  setCards: (cards: CardType[] | ((prevCards: CardType[]) => CardType[])) => void;
   userId: string;
   boardId: string;
 }
 
-export const useDragDropSystem = ({ lists, setLists, userId, boardId }: UseDragDropSystemProps) => {
-  const updateListOrder = async (newLists: ListType[]) => {
+export const useDragDropSystem = ({ cards, setCards, userId, boardId }: UseDragDropSystemProps) => {
+  const updateCardOrder = async (newCards: CardType[]) => {
     if (!userId) return;
 
     const batch = writeBatch(db);
-    newLists.forEach((list, index) => {
-      const listRef = doc(db, `users/${userId}/boards/${boardId}/cards`, list.id);
-      batch.update(listRef, { order: index });
+    newCards.forEach((card, index) => {
+      const cardRef = doc(db, `users/${userId}/boards/${boardId}/cards`, card.id);
+      batch.update(cardRef, { order: index });
     });
     await batch.commit();
   };
@@ -44,54 +44,59 @@ export const useDragDropSystem = ({ lists, setLists, userId, boardId }: UseDragD
       return;
     }
 
-    if (type === 'LIST') {
-      const newLists = Array.from(lists);
-      const [moved] = newLists.splice(source.index, 1);
-      newLists.splice(destination.index, 0, moved);
+    if (type === 'CARD') {
+      const newCards = Array.from(cards);
+      const [moved] = newCards.splice(source.index, 1);
+      newCards.splice(destination.index, 0, moved);
 
-      setLists(newLists);
-      await updateListOrder(newLists);
+      setCards(newCards);
+      await updateCardOrder(newCards);
       return;
     }
 
-    const sourceListIndex = lists.findIndex(l => l.id === source.droppableId);
-    const destListIndex = lists.findIndex(l => l.id === destination.droppableId);
+    if (type === 'TASK') {
+      const sourceCardIndex = cards.findIndex(c => c.id === source.droppableId);
+      const destCardIndex = cards.findIndex(c => c.id === destination.droppableId);
 
-    if (sourceListIndex === -1 || destListIndex === -1) return;
+      if (sourceCardIndex === -1 || destCardIndex === -1) return;
 
-    const sourceList = lists[sourceListIndex];
-    const destList = lists[destListIndex];
+      const sourceCard = cards[sourceCardIndex];
+      const destCard = cards[destCardIndex];
 
-    const sourceCards = Array.from(sourceList.cards);
-    const [movedCard] = sourceCards.splice(source.index, 1);
+      const sourceTasks = Array.from(sourceCard.tasks || []);
+      const [movedTask] = sourceTasks.splice(source.index, 1);
 
-    const destCards =
-      source.droppableId === destination.droppableId
-        ? sourceCards
-        : Array.from(destList.cards);
-    destCards.splice(destination.index, 0, movedCard);
+      const destTasks =
+        source.droppableId === destination.droppableId
+          ? sourceTasks
+          : Array.from(destCard.tasks || []);
+      
+      destTasks.splice(destination.index, 0, movedTask);
 
-    const batch = writeBatch(db);
-    batch.update(
-      doc(db, `users/${userId}/boards/${boardId}/cards`, sourceList.id),
-      { cards: sourceCards }
-    );
-    if (source.droppableId !== destination.droppableId) {
-      batch.update(
-        doc(db, `users/${userId}/boards/${boardId}/cards`, destList.id),
-        { cards: destCards }
-      );
-    }
-    await batch.commit();
+      const batch = writeBatch(db);
 
-    setLists((prevLists: ListType[]) => {
-      const newLists = Array.from(prevLists);
-      newLists[sourceListIndex] = { ...sourceList, cards: sourceCards };
+      // Update source card
+      const sourceCardRef = doc(db, `users/${userId}/boards/${boardId}/cards`, sourceCard.id);
+      batch.update(sourceCardRef, { tasks: sourceTasks });
+
+      // Update destination card if different from source
       if (source.droppableId !== destination.droppableId) {
-        newLists[destListIndex] = { ...destList, cards: destCards };
+        const destCardRef = doc(db, `users/${userId}/boards/${boardId}/cards`, destCard.id);
+        batch.update(destCardRef, { tasks: destTasks });
       }
-      return newLists;
-    });
+
+      await batch.commit();
+
+      // Update local state
+      setCards(prevCards => {
+        const newCards = Array.from(prevCards);
+        newCards[sourceCardIndex] = { ...sourceCard, tasks: sourceTasks };
+        if (source.droppableId !== destination.droppableId) {
+          newCards[destCardIndex] = { ...destCard, tasks: destTasks };
+        }
+        return newCards;
+      });
+    }
   };
 
   return {

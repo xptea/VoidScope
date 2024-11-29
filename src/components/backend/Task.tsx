@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { Draggable, Droppable } from 'react-beautiful-dnd';
-
-interface CardType {
-  id: string;
-  title: string;
-  description: string;
-}
+import { TaskType } from '../../lib/DragDropSystem';
 
 interface ListProps {
-  title: string;
-  index: number;
   id: string;
-  cards: CardType[];
-  onDelete: (listId: string) => void;
-  onUpdate: (listId: string, newTitle: string) => void;
-  onAdd: (listId: string, card?: { title: string; description: string }) => void;
-  onUpdateCard: (listId: string, cardId: string, updates: Partial<CardType>) => void;
-  onDeleteCard: (listId: string, cardId: string) => void;
-  isHorizontal: boolean;
+  title: string;
+  tasks: TaskType[];
+  index: number;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, newTitle: string) => void;
+  onAdd: (id: string) => void;
+  onUpdateCard: (id: string, cardId: string, updates: Partial<TaskType>) => void;
+  onDeleteCard: (id: string, cardId: string) => void;
+  isHorizontal?: boolean;
 }
 
 const List: React.FC<ListProps> = ({ 
   title, 
   index, 
   id, 
-  cards, 
+  tasks, 
   onDelete, 
   onUpdate, 
   onAdd, 
@@ -58,7 +53,7 @@ const List: React.FC<ListProps> = ({
   };
 
 
-  const handleAddCard = (e: React.MouseEvent) => {
+  const handleAddTask = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onAdd(id);
@@ -70,12 +65,18 @@ const List: React.FC<ListProps> = ({
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
+          {...provided.dragHandleProps}
           className={`bg-[#161616] rounded-md group ${
-            isHorizontal ? 'w-[300px] flex-shrink-0' : 'w-full max-w-[300px]'
+            isHorizontal ? 'w-[300px] flex-shrink-0' : 'w-full'
           } flex flex-col px-4 pt-4 ${
             !isCollapsed ? 'pb-1' : ''
           }`}
-          style={provided.draggableProps.style}
+          style={{
+            ...provided.draggableProps.style,
+            height: isHorizontal ? 'fit-content' : undefined,
+            alignSelf: 'flex-start',
+            flexShrink: 0
+          }}
         >
           <div 
             {...provided.dragHandleProps}
@@ -162,28 +163,29 @@ const List: React.FC<ListProps> = ({
             </div>
           </div>
 
-          <Droppable droppableId={id} type="CARD">
+          <Droppable droppableId={id} type="TASK" direction={isHorizontal ? "horizontal" : "vertical"}>
             {(dropProvided, dropSnapshot) => (
               <div
                 ref={dropProvided.innerRef}
                 {...dropProvided.droppableProps}
-                className={`flex flex-col gap-2 rounded-md transition-colors
+                className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2 rounded-md transition-colors
                   ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[70vh] overflow-y-auto'} 
                   ${dropSnapshot.isDraggingOver ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}`}
                 style={{
                   minHeight: isCollapsed ? 0 : '50px',
                 }}
               >
-                <div className="flex flex-col gap-2 p-0.5">
-                  {cards?.map((card, cardIndex) => (
+                <div className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2 p-0.5`}>
+                  {tasks?.map((task, index) => (
                     <Card
-                      key={card.id}
-                      id={card.id}
-                      index={cardIndex}
-                      title={card.title}
-                      description={card.description}
-                      onUpdate={(updates) => onUpdateCard(id, card.id, updates)}
-                      onDelete={() => onDeleteCard(id, card.id)}
+                      key={task.id}
+                      id={task.id}
+                      index={index}
+                      title={task.title}
+                      description={task.description}
+                      onUpdate={(updates) => onUpdateCard(id, task.id, updates)}
+                      onDelete={() => onDeleteCard(id, task.id)}
+                      isHorizontal={isHorizontal} // Pass the prop here
                     />
                   ))}
                 </div>
@@ -200,11 +202,11 @@ const List: React.FC<ListProps> = ({
             }}
           >
             <button
-              onClick={handleAddCard}
+              onClick={handleAddTask}
               className="w-full py-1 text-[#666666] hover:text-white transition-all duration-200 
                 text-sm hover:bg-[#1a1a1a] rounded-md mt-2 opacity-0 group-hover:opacity-100"
             >
-              + Add Card
+              + Add Task
             </button>
           </div>
         </div>

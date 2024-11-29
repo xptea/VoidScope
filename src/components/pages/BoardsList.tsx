@@ -142,39 +142,47 @@ const BoardsList = ({ onSelectBoard }: { onSelectBoard: (boardId: string) => voi
     setError(null);
 
     try {
-      // Create a reference to the boards collection
       const boardsRef = collection(db, `users/${user.uid}/boards`);
       
-      // Create new board
       const newBoard = await addDoc(boardsRef, {
         title: 'New Board',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
 
-      // After board is created, create default cards
       const cardsRef = collection(db, `users/${user.uid}/boards/${newBoard.id}/cards`);
       
-      // Create default lists as cards
       const defaultCards = [
-        { title: 'To Do', cards: [], order: 0 },
-        { title: 'In Progress', cards: [], order: 1 },
-        { title: 'Done', cards: [], order: 2 }
+        { title: 'To Do', cards: [{
+          title: 'Add your first task',
+          description: 'Click the + button to add more tasks',
+          createdAt: Timestamp.now(),
+          order: 0
+        }], order: 0 },
+        { title: 'In Progress', cards: [{
+          title: 'Task in progress',
+          description: 'Drag tasks here when you start working on them',
+          createdAt: Timestamp.now(),
+          order: 0
+        }], order: 1 },
+        { title: 'Done', cards: [{
+          title: 'Completed task',
+          description: 'Drag tasks here when they are finished',
+          createdAt: Timestamp.now(),
+          order: 0
+        }], order: 2 }
       ];
 
-      // Add cards sequentially to avoid potential conflicts
       for (const card of defaultCards) {
         await addDoc(cardsRef, card);
       }
 
-      // Set board for editing
       setBoardToEdit({
         id: newBoard.id,
         title: 'New Board',
         createdAt: Timestamp.now()
       });
 
-      // Navigate to the new board immediately
       onSelectBoard(newBoard.id);
     } catch (err) {
       console.error('Error creating board:', err);

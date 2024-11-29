@@ -12,13 +12,13 @@ service cloud.firestore {
 
     // Validate common fields
     function hasValidTimestamp(data) {
-      return data.createdAt is timestamp && data.updatedAt is timestamp;
+      return (!('createdAt' in data) && !('updatedAt' in data)) || 
+             (('createdAt' in data) && data.createdAt is timestamp) ||
+             (('updatedAt' in data) && data.updatedAt is timestamp);
     }
 
     function hasValidTitle(data) {
-      return data.title is string && 
-             data.title.size() >= 1 && 
-             data.title.size() <= 100;
+      return data.title is string;
     }
 
     // Users collection
@@ -31,7 +31,9 @@ service cloud.firestore {
       // Settings subcollection
       match /settings/{settingId} {
         allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
 
         // Validate Trello settings
         match /trello {
@@ -52,25 +54,22 @@ service cloud.firestore {
                         hasValidTitle(request.resource.data);
         allow delete: if isOwner(userId);
 
-        // Cards/Lists subcollection within boards
+        // Cards subcollection within boards
         match /cards/{cardId} {
-          function hasValidCards(data) {
-            return data.cards is list || data.cards == null;
+          function hasValidTasks(data) {
+            return (!('tasks' in data)) || data.tasks is list;
           }
 
           function hasValidOrder(data) {
-            return data.order is number && data.order >= 0;
+            return data.order is number;
           }
 
           allow read: if isOwner(userId);
           allow create: if isOwner(userId) && 
                          hasValidTitle(request.resource.data) && 
-                         hasValidCards(request.resource.data) && 
+                         hasValidTasks(request.resource.data) && 
                          hasValidOrder(request.resource.data);
-          allow update: if isOwner(userId) && 
-                         hasValidTitle(request.resource.data) && 
-                         hasValidCards(request.resource.data) && 
-                         hasValidOrder(request.resource.data);
+          allow update: if isOwner(userId);
           allow delete: if isOwner(userId);
         }
       }

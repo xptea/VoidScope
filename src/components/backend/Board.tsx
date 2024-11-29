@@ -3,13 +3,21 @@ import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import List from './List';
-import { useDragDropSystem, CardType, ListType } from '../../lib/DragDropSystem';
+import List from './Task';
+import { useDragDropSystem, CardType, TaskType } from '../../lib/DragDropSystem';
 
 const Board: React.FC = () => {
   const [isHorizontal, setIsHorizontal] = useState(false);
-  const [lists, setLists] = useState<ListType[]>([]);
+  const [cards, setCards] = useState<CardType[]>([]);
   const { user } = useAuth();
+  
+  // Use the drag drop system hook
+  const { onDragEnd } = useDragDropSystem({
+    cards,
+    setCards,
+    userId: user?.uid || '',
+    boardId: 'default'
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -18,28 +26,39 @@ const Board: React.FC = () => {
       await setDoc(userDocRef, { email: user.email }, { merge: true });
     };
     initializeUser();
-    const listsRef = collection(db, `users/${user.uid}/lists`);
-    const q = query(listsRef);
+    const cardsRef = collection(db, `users/${user.uid}/cards`);
+    const q = query(cardsRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const listsData = snapshot.docs.map(doc => ({
+      const cardsData = snapshot.docs.map(doc => ({
         ...doc.data(),
         id: doc.id,
-      })) as ListType[];
+      })) as CardType[];
       
-      setLists(listsData.sort((a, b) => a.order - b.order));
+      setCards(cardsData.sort((a, b) => a.order - b.order));
     });
     return unsubscribe;
   }, [user]);
 
-  const addList = async () => {
+  const addCard = async () => {
     if (!user) return;
-    const listsRef = collection(db, `users/${user.uid}/lists`);
-    await addDoc(listsRef, {
-      title: 'New List',
-      cards: [],
-      order: lists.length
-    });
+    
+    try {
+      const cardsRef = collection(db, `users/${user.uid}/cards`);
+      
+      const newCard = {
+        title: 'New Card',
+        tasks: [],
+        order: cards.length || 0,
+        createdAt: new Date().toISOString()
+      };
+
+      const docRef = await addDoc(cardsRef, newCard);
+      console.log('Card created with ID:', docRef.id);
+    } catch (error) {
+      console.error("Error adding card:", error);
+    }
   };
+
   const deleteList = async (listId: string) => {
     if (!user) return;
     const listRef = doc(db, `users/${user.uid}/lists`, listId);
@@ -50,51 +69,46 @@ const Board: React.FC = () => {
     const listRef = doc(db, `users/${user.uid}/lists`, listId);
     await updateDoc(listRef, { title: newTitle });
   };
-  const addCard = async (listId: string) => {
+  const addCardToList = async (cardId: string) => {
     if (!user) return;
 
-    const listRef = doc(db, `users/${user.uid}/lists`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
-    const newCard = {
-      id: `card-${Date.now()}`,
-      title: 'New Card',
+    const cardRef = doc(db, `users/${user.uid}/cards`, cardId);
+    const card = cards.find((c: CardType) => c.id === cardId);
+    if (!card) return;
+
+    const newTask: TaskType = {
+      id: `task-${Date.now()}`,
+      title: 'New Task',
       description: 'Description'
     };
-    await updateDoc(listRef, {
-      cards: [...list.cards, newCard]
+
+    await updateDoc(cardRef, {
+      tasks: [...card.tasks, newTask]
     });
   };
-  const updateCard = async (listId: string, cardId: string, updates: Partial<CardType>) => {
+  const updateCard = async (cardId: string, taskId: string, updates: Partial<TaskType>) => {
     if (!user) return;
-    const listRef = doc(db, `users/${user.uid}/lists`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
+    const cardRef = doc(db, `users/${user.uid}/cards`, cardId);
+    const card = cards.find((c: CardType) => c.id === cardId);
+    if (!card) return;
 
-    const updatedCards = list.cards.map(card => 
-      card.id === cardId ? { ...card, ...updates } : card
+    const updatedTasks = card.tasks.map((task: TaskType) => 
+      task.id === taskId ? { ...task, ...updates } : task
     );
 
-    await updateDoc(listRef, { cards: updatedCards });
+    await updateDoc(cardRef, { tasks: updatedTasks });
   };
 
-  const deleteCard = async (listId: string, cardId: string) => {
+  const deleteCard = async (cardId: string, taskId: string) => {
     if (!user) return;
 
-    const listRef = doc(db, `users/${user.uid}/lists`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
+    const cardRef = doc(db, `users/${user.uid}/cards`, cardId);
+    const card = cards.find((c: CardType) => c.id === cardId);
+    if (!card) return;
 
-    const updatedCards = list.cards.filter(card => card.id !== cardId);
-    await updateDoc(listRef, { cards: updatedCards });
+    const updatedTasks = card.tasks.filter((task: TaskType) => task.id !== taskId);
+    await updateDoc(cardRef, { tasks: updatedTasks });
   };
-
-  const { onDragEnd } = useDragDropSystem({
-    lists,
-    setLists,
-    userId: user?.uid || '',
-    boardId: 'default', // Adjust this based on your needs
-  });
 
   return (
     <div className="flex-1 p-6">
@@ -111,49 +125,68 @@ const Board: React.FC = () => {
               </svg>
             ) : (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
               </svg>
             )}
           </button>
         </div>
       </div>
 
-      <div className={`${
-        isHorizontal ? 'flex overflow-x-auto pb-4' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-      }`}>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="all-lists" type="LIST" direction="vertical">
-            {(provided) => (
-              <div 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="list-container"
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable 
+          droppableId="all-lists" 
+          type="LIST" 
+          direction={isHorizontal ? "horizontal" : "vertical"}
+        >
+          {(provided, snapshot) => (
+            <div 
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className={`list-container relative ${
+                isHorizontal 
+                  ? 'flex gap-4 overflow-x-auto pb-4' 
+                  : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+              } ${snapshot.isDraggingOver ? 'bg-blue-500/5' : ''}`}
+              style={{
+                minHeight: isHorizontal ? '500px' : undefined,
+                display: isHorizontal ? 'flex' : 'grid',
+                alignItems: 'flex-start',
+                width: isHorizontal ? 'max-content' : '100%'  // Add this line
+              }}
+            >
+              {cards.map((card: CardType, index: number) => (
+                <List 
+                  key={card.id}
+                  id={card.id}
+                  title={card.title}
+                  index={index}
+                  tasks={card.tasks}
+                  onDelete={deleteList}
+                  onUpdate={updateList}
+                  onAdd={addCardToList}
+                  onUpdateCard={updateCard}
+                  onDeleteCard={deleteCard}
+                  isHorizontal={isHorizontal} 
+                />
+              ))}
+              {provided.placeholder}
+              <button 
+                className={`btn text-[#666666] hover:text-white text-center ${
+                  isHorizontal 
+                    ? 'min-w-[300px] h-[200px] flex items-center justify-center' 
+                    : 'w-full py-4'
+                }`} 
+                onClick={addCard}
               >
-                {lists.map((list, index) => (
-                  <List 
-                    key={list.id}
-                    id={list.id}
-                    title={list.title}
-                    index={index}
-                    cards={list.cards}
-                    onDelete={deleteList}
-                    onUpdate={updateList}
-                    onAdd={addCard}
-                    onUpdateCard={updateCard}
-                    onDeleteCard={deleteCard}
-                    isHorizontal={isHorizontal} />
-                ))}
-                {provided.placeholder}
-                <button className="btn w-full text-[#666666] hover:text-white text-center" onClick={addList}>
-                  + Add List
-                </button>
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      </div>
+                + Add List
+              </button>
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };
 
 export default Board;
+

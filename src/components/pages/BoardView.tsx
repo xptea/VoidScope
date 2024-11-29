@@ -3,11 +3,10 @@ import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { collection, query, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import List from '../../components/backend/List';
+import List from '../backend/Task';
 import { v4 as uuidv4 } from 'uuid';
-import { useDragDropSystem, CardType, ListType } from '../../lib/DragDropSystem';
+import { useDragDropSystem, CardType, TaskType } from '../../lib/DragDropSystem';
 
-// Remove the CardType and ListType interfaces since they're now imported
 
 interface BoardViewProps {
   boardId: string;
@@ -15,7 +14,7 @@ interface BoardViewProps {
 }
 
 const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
-  const [lists, setLists] = useState<ListType[]>([]);
+  const [cards, setCards] = useState<CardType[]>([]);
   const [board, setBoard] = useState<{ title: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -38,9 +37,9 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
       const cardsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })) as ListType[];
+      })) as CardType[];
       
-      setLists(cardsData.sort((a, b) => a.order - b.order));
+      setCards(cardsData.sort((a, b) => a.order - b.order));
       setIsLoading(false);
     });
 
@@ -50,75 +49,84 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
     };
   }, [user, boardId]);
 
-  const addList = async () => {
+  const addCard = async () => {
     if (!user || !boardId) return;
 
-    const cardsRef = collection(db, `users/${user.uid}/boards/${boardId}/cards`);
-    await addDoc(cardsRef, {
-      title: 'New List',
-      cards: [],
-      order: lists.length
-    });
+    try {
+      const cardsRef = collection(db, `users/${user.uid}/boards/${boardId}/cards`);
+      
+      const newCard = {
+        title: 'New Card',
+        tasks: [],
+        order: cards.length || 0,
+        createdAt: new Date().toISOString()
+      };
+
+      const docRef = await addDoc(cardsRef, newCard);
+      console.log('Card created with ID:', docRef.id); // Debug log
+    } catch (error) {
+      console.error("Error adding card:", error);
+    }
   };
 
-  const deleteList = async (listId: string) => {
+  const deleteTask = async (taskId: string) => {
     if (!user || !boardId) return;
-    const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
-    await deleteDoc(listRef);
+    const taskRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, taskId);
+    await deleteDoc(taskRef);
   };
 
-  const updateList = async (listId: string, newTitle: string) => {
+  const updateTask = async (taskId: string, newTitle: string) => {
     if (!user || !boardId) return;
-    const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
-    await updateDoc(listRef, { title: newTitle });
+    const taskRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, taskId);
+    await updateDoc(taskRef, { title: newTitle });
   };
 
-  const addCard = async (listId: string) => {
+  const addCardToTask = async (taskId: string) => {
     if (!user || !boardId) return;
     
-    const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
+    const taskRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, taskId);
+    const card = cards.find(c => c.id === taskId);
+    if (!card) return;
 
-    const newCard = {
+    const newTask: TaskType = {
       id: uuidv4(),
-      title: 'New Card',
-      description: 'Description',
+      title: 'New Task',
+      description: ' ',
     };
 
-    await updateDoc(listRef, {
-      cards: [...(list.cards || []), newCard],
+    await updateDoc(taskRef, {
+      tasks: [...(card.tasks || []), newTask],
     });
   };
 
-  const updateCard = async (listId: string, cardId: string, updates: Partial<CardType>) => {
+  const updateCard = async (listId: string, cardId: string, updates: Partial<TaskType>) => {
     if (!user || !boardId) return;
 
-    const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
+    const cardRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
+    const card = cards.find(c => c.id === listId);
+    if (!card) return;
 
-    const updatedCards = list.cards.map(card => 
-      card.id === cardId ? { ...card, ...updates } : card
+    const updatedTasks = card.tasks.map((task: TaskType) => 
+      task.id === cardId ? { ...task, ...updates } : task
     );
 
-    await updateDoc(listRef, { cards: updatedCards });
+    await updateDoc(cardRef, { tasks: updatedTasks });
   };
 
   const deleteCard = async (listId: string, cardId: string) => {
     if (!user || !boardId) return;
 
-    const listRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
-    const list = lists.find(l => l.id === listId);
-    if (!list) return;
+    const cardRef = doc(db, `users/${user.uid}/boards/${boardId}/cards`, listId);
+    const card = cards.find(c => c.id === listId);
+    if (!card) return;
 
-    const updatedCards = list.cards.filter(card => card.id !== cardId);
-    await updateDoc(listRef, { cards: updatedCards });
+    const updatedTasks = card.tasks.filter(task => task.id !== cardId);
+    await updateDoc(cardRef, { tasks: updatedTasks });
   };
 
   const { onDragEnd } = useDragDropSystem({
-    lists,
-    setLists,
+    cards,
+    setCards,
     userId: user?.uid || '',
     boardId,
   });
@@ -150,7 +158,7 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
       </div>
       
       <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="all-lists" type="LIST" direction={isHorizontal ? 'horizontal' : 'vertical'}>
+        <Droppable droppableId="all-lists" type="CARD" direction={isHorizontal ? 'horizontal' : 'vertical'}>
           {(provided) => (
             <div
               {...provided.droppableProps}
@@ -165,16 +173,16 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
                 height: 'calc(100vh - 140px)',
               }}
             >
-              {lists.map((list, index) => (
+              {cards.map((card, index) => (
                 <List
-                  key={list.id}
-                  id={list.id}
-                  title={list.title}
-                  cards={list.cards || []}
+                  key={card.id}
+                  id={card.id}
+                  title={card.title}
+                  tasks={card.tasks || []}
                   index={index}
-                  onDelete={deleteList}
-                  onUpdate={updateList}
-                  onAdd={addCard}
+                  onDelete={deleteTask}
+                  onUpdate={updateTask}
+                  onAdd={addCardToTask}
                   onUpdateCard={updateCard}
                   onDeleteCard={deleteCard}
                   isHorizontal={isHorizontal}
@@ -183,10 +191,10 @@ const BoardView = ({ boardId, onTrelloImport }: BoardViewProps) => {
               {provided.placeholder}
               
               <button
-                onClick={addList}
+                onClick={addCard}
                 className="w-full py-2 px-4 bg-[#222222] hover:bg-[#333333] transition-colors rounded-sm text-[#666666] hover:text-white"
               >
-                + Add List
+                + Add Card
               </button>
             </div>
           )}
