@@ -14,7 +14,7 @@ interface CardProps {
   id: string;
   onUpdate: (updates: Partial<CardType>) => void;
   onDelete: () => void;
-  isHorizontal?: boolean; // Add this line
+  isHorizontal?: boolean;
 }
 
 const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, onDelete, isHorizontal }) => {
@@ -75,15 +75,20 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           >
             <div className="flex-1 min-w-0 relative mr-2 flex">
               {isEditing ? (
-                <input
-                  type="text"
+                <textarea
                   value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="bg-[#111111] rounded px-2 py-1 text-sm font-medium focus:outline-none text-white w-full"
+                  onChange={(e) => {
+                    setEditedTitle(e.target.value);
+                    // Auto-adjust height
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  className="bg-[#111111] rounded px-2 py-1 text-sm font-medium focus:outline-none text-white w-full resize-none overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                   autoFocus
+                  rows={1}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSave();
                     }
@@ -162,7 +167,7 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                         e.stopPropagation();
                         handleDelete();
                       }}
-                      className="text-green-500 hover:text-green-400 w-5 h-5 flex items-center justify-center text-sm"
+                      className="text-red-500 hover:text-red-400 w-5 h-5 flex items-center justify-center"
                     >
                       ✓
                     </button>
@@ -171,11 +176,9 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
                         e.stopPropagation();
                         setIsDeleting(false);
                       }}
-                      className="text-red-500 hover:text-red-400 w-5 h-5 flex items-center justify-center"
+                      className="text-green-500 hover:text-green-400 w-5 h-5 flex items-center justify-center text-base"
                     >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M6 7H5M6 7H8M18 7H19M18 7H16M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M8 7H16M10 11V16M14 11V16" />
-                      </svg>
+                      ×
                     </button>
                   </div>
                 </div>
@@ -198,24 +201,31 @@ const Card: React.FC<CardProps> = ({ title, description, index, id, onUpdate, on
           </div>
 
           <div 
-            className={`transition-all duration-200 ease-in-out w-full overflow-hidden px-2
+            className={`transition-all duration-200 ease-in-out w-full overflow-hidden px-2 scrollbar-none [&::-webkit-scrollbar]:hidden
               ${isCollapsed 
                 ? 'max-h-0 opacity-0 m-0' 
                 : description || isEditing 
-                  ? 'max-h-[200px] opacity-100 pb-2' 
+                  ? 'max-h-[500px] opacity-100 pb-2' 
                   : 'max-h-0'
               }`}
             style={{
-              transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)'
+              transform: isCollapsed ? 'translateY(-8px)' : 'translateY(0)',
+              WebkitOverflowScrolling: 'touch'
             }}
           >
             {isEditing ? (
               <textarea
                 value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                className="bg-[#111111] border border-[#333333] text-xs w-full p-2 focus:outline-none text-[#999999] resize-none rounded-sm"
+                onChange={(e) => {
+                  setEditedDescription(e.target.value);
+                  // Auto-adjust height
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                className="bg-[#111111] border border-[#333333] text-xs w-full p-2 focus:outline-none text-[#999999] resize-none rounded-sm scrollbar-none [&::-webkit-scrollbar]:hidden"
                 onClick={(e) => e.stopPropagation()}
-                style={{ minHeight: '60px' }}
+                rows={1}
+                style={{ WebkitOverflowScrolling: 'touch' }}
               />
             ) : description ? (
               <p className="text-white text-xs break-words">

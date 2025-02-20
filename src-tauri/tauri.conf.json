@@ -22,12 +22,14 @@
         "resizable": true
       }
     ],
-    "security": {
-    }
+    "security": {}
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "macOS": {
+      "entitlements": "src-tauri/entitlements.plist"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/icon.ico"

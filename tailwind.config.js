@@ -2,7 +2,12 @@
 export default {
   content: ["./src/**/*.{html,js,ts,tsx,jsx}"],
   theme: {
-    extend: {},
+    extend: {
+      // Add scrollbar hiding utilities
+      display: ["scrollbar"] 
+    },
   },
-  plugins: [],
+  plugins: [
+    require('tailwind-scrollbar-hide')
+  ],
 }

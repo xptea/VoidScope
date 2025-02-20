@@ -1,4 +1,5 @@
-import { DropResult } from 'react-beautiful-dnd';
+import React, { useState } from 'react';
+import { DropResult, DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -44,7 +45,7 @@ export const useDragDropSystem = ({ cards, setCards, userId, boardId }: UseDragD
       return;
     }
 
-    if (type === 'CARD') {
+    if (type === 'LIST') {
       const newCards = Array.from(cards);
       const [moved] = newCards.splice(source.index, 1);
       newCards.splice(destination.index, 0, moved);
@@ -75,11 +76,9 @@ export const useDragDropSystem = ({ cards, setCards, userId, boardId }: UseDragD
 
       const batch = writeBatch(db);
 
-      // Update source card
       const sourceCardRef = doc(db, `users/${userId}/boards/${boardId}/cards`, sourceCard.id);
       batch.update(sourceCardRef, { tasks: sourceTasks });
 
-      // Update destination card if different from source
       if (source.droppableId !== destination.droppableId) {
         const destCardRef = doc(db, `users/${userId}/boards/${boardId}/cards`, destCard.id);
         batch.update(destCardRef, { tasks: destTasks });
@@ -87,7 +86,6 @@ export const useDragDropSystem = ({ cards, setCards, userId, boardId }: UseDragD
 
       await batch.commit();
 
-      // Update local state
       setCards(prevCards => {
         const newCards = Array.from(prevCards);
         newCards[sourceCardIndex] = { ...sourceCard, tasks: sourceTasks };
@@ -102,4 +100,66 @@ export const useDragDropSystem = ({ cards, setCards, userId, boardId }: UseDragD
   return {
     onDragEnd,
   };
+};
+interface Column {
+  id: string;
+  title: string;
+}
+
+const initialColumns: Column[] = [
+  { id: 'col-1', title: 'Column 1' },
+  { id: 'col-2', title: 'Column 2' },
+  { id: 'col-3', title: 'Column 3' },
+];
+
+export const HorizontalDragDropColumns: React.FC = () => {
+  const [columns, setColumns] = useState<Column[]>(initialColumns);
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const newColumns = Array.from(columns);
+    const [removed] = newColumns.splice(result.source.index, 1);
+    newColumns.splice(result.destination.index, 0, removed);
+    setColumns(newColumns);
+  };
+
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable droppableId="columns" direction="horizontal">
+        {(provided) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            style={{ display: 'flex', padding: 8, overflow: 'auto' }}
+          >
+            {columns.map((column, index) => (
+              <Draggable key={column.id} draggableId={column.id} index={index}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      userSelect: 'none',
+                      padding: 16,
+                      margin: '0 8px 0 0',
+                      minHeight: '50px',
+                      flexShrink: 0,
+                      backgroundColor: snapshot.isDragging ? '#263B4A' : '#456C86',
+                      color: 'white',
+                      ...provided.draggableProps.style,
+                    }}
+                  >
+                    {column.title}
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  );
 };

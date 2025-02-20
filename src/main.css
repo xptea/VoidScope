@@ -180,3 +180,13 @@ body {
 }
 
 /* Remove any other scrollbar styles */
+
+/* Hide scrollbars globally for WebKit browsers */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

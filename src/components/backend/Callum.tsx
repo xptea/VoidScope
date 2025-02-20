@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
 import { Draggable, Droppable } from 'react-beautiful-dnd';
-import { TaskType } from '../../lib/DragDropSystem';
+import { TaskType } from './DragDropSystem';
 
 interface ListProps {
   id: string;
@@ -32,6 +32,7 @@ const List: React.FC<ListProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(title);
   const [isAutoExpanded, setIsAutoExpanded] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -52,6 +53,10 @@ const List: React.FC<ListProps> = ({
     setIsEditing(false);
   };
 
+  const handleDelete = () => {
+    onDelete(id);
+    setIsDeleting(false);
+  };
 
   const handleAddTask = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -81,18 +86,24 @@ const List: React.FC<ListProps> = ({
           <div 
             {...provided.dragHandleProps}
             className="flex items-start justify-between mb-4 gap-2 list-header"
+            onDoubleClick={() => setIsCollapsed(!isCollapsed)}
           >
             <div className="flex-1 min-w-0 relative mr-2 flex">
               {isEditing ? (
-                <input
-                  type="text"
+                <textarea
                   value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="bg-[#111111] rounded px-2 py-1 text-sm font-medium focus:outline-none text-white w-full"
+                  onChange={(e) => {
+                    setEditedTitle(e.target.value);
+                    // Auto-adjust height
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  className="bg-[#111111] rounded px-2 py-1 text-sm font-medium focus:outline-none text-white w-full resize-none overflow-hidden"
                   style={{ maxWidth: '100%' }}
                   autoFocus
+                  rows={1}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSave();
                     }
@@ -109,13 +120,13 @@ const List: React.FC<ListProps> = ({
               )}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              {!isEditing && (
+              {!isEditing && !isDeleting && (
                 <div className="relative group/menu">
                   <button className="text-[#666666] hover:text-white w-6 h-6 flex items-center justify-center text-lg transition-all duration-200 transform group-hover/menu:rotate-90">
                     ≡
                   </button>
                   <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center z-20">
-                    <div className="flex items-center gap-2 translate-x-2 opacity-0 group-hover/menu:translate-x-0 group-hover/menu:opacity-100 transition-all duration-200 bg-[#161616] shadow-md p-1 rounded-md">
+                    <div className="opacity-0 group-hover/menu:opacity-100 transition-all duration-200 bg-[#161616] shadow-md p-1 rounded-md flex items-center gap-2">
                       <button
                         onClick={() => setIsEditing(true)}
                         className="text-[#666666] hover:text-white w-6 h-6 flex items-center justify-center text-base"
@@ -123,7 +134,7 @@ const List: React.FC<ListProps> = ({
                         ✎
                       </button>
                       <button
-                        onClick={() => onDelete(id)}
+                        onClick={() => setIsDeleting(true)}
                         className="text-[#666666] hover:text-red-500 w-6 h-6 flex items-center justify-center"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -152,6 +163,26 @@ const List: React.FC<ListProps> = ({
                 </div>
               )}
 
+              {isDeleting && (
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-[#666666]">Delete?</span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={handleDelete}
+                      className="text-red-500 hover:text-red-400 w-5 h-5 flex items-center justify-center"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => setIsDeleting(false)}
+                      className="text-green-500 hover:text-green-400 w-5 h-5 flex items-center justify-center text-base"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="h-4 w-[1px] bg-[#222222] mx-1"></div>
 
               <button
@@ -163,19 +194,20 @@ const List: React.FC<ListProps> = ({
             </div>
           </div>
 
-          <Droppable droppableId={id} type="TASK" direction={isHorizontal ? "horizontal" : "vertical"}>
+          <Droppable droppableId={id} type="TASK" direction="vertical">
             {(dropProvided, dropSnapshot) => (
               <div
                 ref={dropProvided.innerRef}
                 {...dropProvided.droppableProps}
-                className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2 rounded-md transition-colors
+                className={`flex flex-col gap-2 rounded-md transition-colors scrollbar-none [&::-webkit-scrollbar]:hidden
                   ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[70vh] overflow-y-auto'} 
                   ${dropSnapshot.isDraggingOver ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}`}
                 style={{
                   minHeight: isCollapsed ? 0 : '50px',
+                  WebkitOverflowScrolling: 'touch'
                 }}
               >
-                <div className={`flex ${isHorizontal ? 'flex-row' : 'flex-col'} gap-2 p-0.5`}>
+                <div className="flex flex-col gap-2 p-0.5">
                   {tasks?.map((task, index) => (
                     <Card
                       key={task.id}
@@ -185,7 +217,7 @@ const List: React.FC<ListProps> = ({
                       description={task.description}
                       onUpdate={(updates) => onUpdateCard(id, task.id, updates)}
                       onDelete={() => onDeleteCard(id, task.id)}
-                      isHorizontal={isHorizontal} // Pass the prop here
+                      isHorizontal={isHorizontal} 
                     />
                   ))}
                 </div>

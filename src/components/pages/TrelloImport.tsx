@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../backend/AuthContext';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db } from '../backend/firebase';
 
 interface TrelloImportViewProps {
   onBack: () => void;

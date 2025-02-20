@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../backend/AuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db } from '../backend/firebase';
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -37,7 +37,6 @@ const SettingsView = ({ onBack }: SettingsViewProps) => {
     setMessage(null);
 
     try {
-      // Validate credentials by making a test API call
       const response = await fetch(
         `https://api.trello.com/1/members/me?key=${apiKey}&token=${token}`
       );
@@ -46,7 +45,6 @@ const SettingsView = ({ onBack }: SettingsViewProps) => {
         throw new Error('Invalid credentials');
       }
 
-      // Save to Firestore
       const settingsRef = doc(db, `users/${user.uid}/settings/trello`);
       await setDoc(settingsRef, {
         apiKey,
@@ -78,7 +76,6 @@ const SettingsView = ({ onBack }: SettingsViewProps) => {
       </div>
 
       <div className="max-w-2xl space-y-6">
-        {/* Profile Section */}
         <div className="bg-[#161616] rounded-lg border border-[#222222] p-6">
           <h2 className="text-lg font-medium text-white mb-6">Profile Information</h2>
           
@@ -110,7 +107,6 @@ const SettingsView = ({ onBack }: SettingsViewProps) => {
           </div>
         </div>
 
-        {/* Existing Trello Integration Section */}
         <div className="bg-[#161616] rounded-lg border border-[#222222] p-6">
           <h2 className="text-lg font-medium text-white mb-6">Trello Integration</h2>
           
